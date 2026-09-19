@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from pathlib import Path
 import sqlite3, json, datetime, math, os
-from .connectors import enrich
-from .financial_engine import quick_metrics, price_curve
+from connectors import enrich
+from financial_engine import analyze_financials
 
 app = FastAPI(title='RADAR IMMO', version='0.5.0')
 DB=Path(__file__).resolve().parent.parent/'radar.db'
