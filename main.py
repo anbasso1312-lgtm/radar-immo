@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 from pathlib import Path
 import sqlite3, json, datetime, math, os
 from connectors import enrich
-from financial_engine import analyze_financials
+from financial_engine import monthly_payment as _monthly_payment, quick_metrics, price_curve
 
 app = FastAPI(title='RADAR IMMO', version='0.5.0')
-DB=Path(__file__).resolve().parent.parent/'radar.db'
+DB=Path(__file__).resolve().parent/'radar.db'
 
 def con():
     c=sqlite3.connect(DB); c.row_factory=sqlite3.Row; return c
@@ -39,8 +39,7 @@ class OpportunityIn(BaseModel):
     title:str='Off-market'; address:str='Bordeaux'; price:float=Field(gt=0); surface:float=Field(gt=0); rooms:int=2; rent:float=0; works:float=0; current_value:Optional[float]=None; renovated_value:Optional[float]=None; origin:str='OFF_MARKET'; source_id:Optional[int]=None
 
 def monthly_payment(p,r,y):
-    from .financial_engine import monthly_payment as _mp
-    return _mp(p,r,y)
+    return _monthly_payment(p,r,y)
 def clamp(x): return max(0,min(100,x))
 def analyze(d:DealInput):
     acq=d.price*d.acquisition_cost_rate; total=d.price+acq+d.works; debt=max(0,total-d.down_payment); pay=monthly_payment(debt,d.annual_rate,d.loan_years); ins=debt*d.insurance_rate/12
