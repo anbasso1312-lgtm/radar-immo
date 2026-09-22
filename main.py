@@ -7,6 +7,18 @@ from pathlib import Path
 import sqlite3, json, datetime, math, os
 from connectors import enrich
 from financial_engine import monthly_payment as _monthly_payment, quick_metrics, price_curve
+from version import APP_VERSION
+from acquisition_cost_engine import estimate_acquisition_costs
+from resale_engine import analyze_resale
+from property_condition_engine import classify_condition
+from opportunity_analysis_engine import analyze_opportunity
+from purchase_market_database import add_observations as add_purchase_observations, market_band as purchase_market_band
+from purchase_data_pipeline import import_dvfplus_csv, import_asking_csv
+from data_status import purchase_data_status
+from purchase_seed_loader import load_verified_seed
+from works_cost_engine import estimate_scope
+from transformation_engine import compare_states
+from land_potential_engine import screen_land
 
 app = FastAPI(title='RADAR IMMO', version=APP_VERSION)
 DB=Path(__file__).resolve().parent/'radar.db'
