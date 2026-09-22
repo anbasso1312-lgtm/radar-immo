@@ -19,9 +19,10 @@ from purchase_seed_loader import load_verified_seed
 from works_cost_engine import estimate_scope
 from transformation_engine import compare_states
 from land_potential_engine import screen_land
+from geo_dvf_sync import start_background_sync, sync_gironde, sync_status
 
 app = FastAPI(title='RADAR IMMO', version=APP_VERSION)
-DB=Path(__file__).resolve().parent/'radar.db'
+DB=Path(os.getenv('RADAR_DB_PATH', str(Path(__file__).resolve().parent/'radar.db')))
 
 def con():
     c=sqlite3.connect(DB); c.row_factory=sqlite3.Row; return c
@@ -42,6 +43,9 @@ def init_db():
     for s in seeds: c.execute('INSERT OR IGNORE INTO sources(name,url,category,access_mode,zone,status,frequency,notes) VALUES(?,?,?,?,?,?,?,?)',s)
     c.commit(); c.close()
 init_db()
+
+# Render/free SQLite is ephemeral: repopulate the official Bordeaux Métropole DVF cache after each boot.
+if os.getenv('RADAR_AUTO_SYNC_DVF','1') == '1': start_background_sync()
 
 class DealInput(BaseModel):
     address:str='Bordeaux'; price:float=Field(gt=0); surface:float=Field(gt=0); rooms:int=Field(2,ge=1); monthly_rent:float=Field(0,ge=0); works:float=Field(0,ge=0); acquisition_cost_rate:float=Field(.08,ge=0,le=.2); down_payment:float=Field(0,ge=0); annual_rate:float=Field(.035,ge=0,le=.2); loan_years:int=Field(25,ge=1,le=35); insurance_rate:float=Field(.003,ge=0,le=.05); property_tax:float=Field(0,ge=0); annual_nonrecoverable_charges:float=Field(0,ge=0); annual_maintenance_rate:float=Field(.01,ge=0,le=.1); vacancy_rate:float=Field(.05,ge=0,le=.5); management_rate:float=Field(0,ge=0,le=.3); current_value:Optional[float]=None; renovated_value:Optional[float]=None; target_margin:float=0; exit_cost_rate:float=.05; reserve_months:int=6; strategy:Literal['hold','renovate','transform','resell']='hold'
@@ -111,7 +115,12 @@ def api_purchase_import_dvf(x:PurchaseCsvIn): return import_dvfplus_csv(x.csv_te
 @app.post('/api/purchase-market/import-asking-csv')
 def api_purchase_import_asking(x:AskingCsvIn): return import_asking_csv(x.csv_text,x.source_name,x.source_type)
 @app.get('/api/purchase-market/status')
-def api_purchase_status(): return purchase_data_status()
+def api_purchase_status():
+    s=purchase_data_status(); s['dvf_sync']=sync_status(); return s
+@app.post('/api/purchase-market/sync-dvf-gironde')
+def api_sync_dvf_gironde(): return sync_gironde()
+@app.post('/api/purchase-market/sync-dvf-gironde-background')
+def api_sync_dvf_gironde_background(): return {'started':start_background_sync(),'status':sync_status()}
 @app.post('/api/purchase-market/load-verified-seed')
 def api_purchase_seed(): return load_verified_seed()
 @app.post('/api/works/cost')
