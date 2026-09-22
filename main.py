@@ -8,7 +8,7 @@ import sqlite3, json, datetime, math, os
 from connectors import enrich
 from financial_engine import monthly_payment as _monthly_payment, quick_metrics, price_curve
 
-app = FastAPI(title='RADAR IMMO', version='0.5.0')
+app = FastAPI(title='RADAR IMMO', version=APP_VERSION)
 DB=Path(__file__).resolve().parent/'radar.db'
 
 def con():
@@ -61,6 +61,29 @@ class EnrichIn(BaseModel):
     address:str
     surface:float=Field(gt=0)
 
+class ResaleAnalysisIn(BaseModel):
+    purchase_price:float=Field(gt=0); prudent_exit_value:float=Field(gt=0); works:float=Field(0,ge=0)
+    resale_agency_fee:float=Field(0,ge=0); financing_cost:float=Field(0,ge=0); holding_cost:float=Field(0,ge=0)
+    technical_costs:float=Field(0,ge=0); contingency:float=Field(0,ge=0); taxes_on_resale:Optional[float]=Field(None,ge=0)
+    target_margin_rate:float=Field(.12,ge=0,le=.8)
+
+class ConditionIn(BaseModel):
+    observations:list[dict]=Field(default_factory=list)
+
+class OpportunityAnalysisIn(BaseModel):
+    purchase_price:float=Field(gt=0); direct_exit_value:Optional[float]=None; renovated_exit_value:Optional[float]=None
+    renovation_cost:Optional[float]=Field(None,ge=0); created_m2:Optional[float]=Field(None,ge=0)
+    created_m2_value:Optional[float]=Field(None,ge=0); created_m2_cost:Optional[float]=Field(None,ge=0); created_m2_validated:bool=False
+
+@app.post('/api/resale/analyze')
+def api_resale_analyze(x:ResaleAnalysisIn): return analyze_resale(**x.model_dump())
+
+@app.post('/api/evidence/condition')
+def api_condition(x:ConditionIn): return classify_condition(x.observations)
+
+@app.post('/api/opportunity/analyze')
+def api_opportunity_analysis(x:OpportunityAnalysisIn): return analyze_opportunity(**x.model_dump())
+
 @app.post('/api/enrich')
 def api_enrich(x:EnrichIn):
     try:
@@ -106,7 +129,7 @@ def quick_radar(d:DealInput):
     return {'asking_price':round(d.price),'quick':base,'price_curve':curve,'max_price_cashflow_zero':max_cf0,'verdict':verdict,'missing':missing,'method':'QUICK_RADAR_ESTIMATES'}
 
 @app.get('/api/health')
-def health():return {'status':'ok','version':'0.5.0'}
+def health():return {'status':'ok','version':APP_VERSION}
 @app.get('/api/config-status')
 def config_status(): return {'georisques_token': bool(os.getenv('GEORISQUES_API_TOKEN')), 'bdnb':'open_no_auth', 'dpe':'open_data'}
 @app.post('/api/analyze')
