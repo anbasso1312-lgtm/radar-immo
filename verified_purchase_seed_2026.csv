@@ -1,0 +1,7 @@
+market_kind,source,source_type,source_listing_id,observed_date,city,postal_code,neighborhood,property_type,rooms,surface,price,state,dpe,notes
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011-486,2026-05-01,Bordeaux,33000,,Appartement,4,84.8,295000,,D,"Prix affiché; 37 lots; charges annuelles 3168 EUR."
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011-485,2026-05-01,Bordeaux,33000,Chartrons,Appartement,3,81.16,320000,,C,"Prix affiché; honoraires acquéreur indiqués dans la publication."
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011-482,2026-05-01,Le Bouscat,33110,,Maison,5,102,365000,,E,"Prix affiché; terrain 549 m2."
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011-491,2026-05-01,Le Bouscat,33110,,Maison,4,97,495000,,G,"Prix affiché; terrain 656 m2; construction 1933."
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011-479,2026-05-01,Gradignan,33170,,Maison,8,197,647900,,,"Prix affiché; terrain 2390 m2; grenier; construction 1968."
+ASKING,Magazine des Notaires Gironde / SCP Chambarière et Figerou,NOTARY_LISTING,011/1027,2026-05-01,Mérignac,33700,,Maison,6,141,674000,,A,"Prix affiché; terrain 700 m2; construction 2023."
