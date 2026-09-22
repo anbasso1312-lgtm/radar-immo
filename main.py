@@ -7,6 +7,18 @@ from pathlib import Path
 import sqlite3, json, datetime, math, os
 from connectors import enrich
 from financial_engine import monthly_payment as _monthly_payment, quick_metrics, price_curve
+from version import APP_VERSION
+from acquisition_cost_engine import estimate_acquisition_costs
+from resale_engine import analyze_resale
+from property_condition_engine import classify_condition
+from opportunity_analysis_engine import analyze_opportunity
+from purchase_market_database import add_observations as add_purchase_observations, market_band as purchase_market_band
+from purchase_data_pipeline import import_dvfplus_csv, import_asking_csv
+from data_status import purchase_data_status
+from purchase_seed_loader import load_verified_seed
+from works_cost_engine import estimate_scope
+from transformation_engine import compare_states
+from land_potential_engine import screen_land
 
 app = FastAPI(title='RADAR IMMO', version=APP_VERSION)
 DB=Path(__file__).resolve().parent/'radar.db'
@@ -74,6 +86,40 @@ class OpportunityAnalysisIn(BaseModel):
     purchase_price:float=Field(gt=0); direct_exit_value:Optional[float]=None; renovated_exit_value:Optional[float]=None
     renovation_cost:Optional[float]=Field(None,ge=0); created_m2:Optional[float]=Field(None,ge=0)
     created_m2_value:Optional[float]=Field(None,ge=0); created_m2_cost:Optional[float]=Field(None,ge=0); created_m2_validated:bool=False
+
+class PurchaseObservationIn(BaseModel):
+    observations:list[dict]=Field(default_factory=list)
+class PurchaseBandIn(BaseModel):
+    city:str='Bordeaux'; neighborhood:Optional[str]=None; property_type:Optional[str]=None; rooms:Optional[int]=None; surface:Optional[float]=None; market_kind:Literal['ASKING','TRANSACTION']='ASKING'
+class PurchaseCsvIn(BaseModel):
+    csv_text:str; city_filter:Optional[str]=None
+class AskingCsvIn(BaseModel):
+    csv_text:str; source_name:str; source_type:str='AGENCY_OR_SPECIAL_SALE'
+class WorksScopeIn(BaseModel):
+    items:list[dict]=Field(default_factory=list)
+class TransformCompareIn(BaseModel):
+    current:dict; target:dict; works:dict; extra_costs:float=0
+class LandScreenIn(BaseModel):
+    parcel_known:bool=False; urbanism_known:bool=False; access_known:bool=False; networks_known:bool=False; private_rules_known:bool=False; candidate_m2:Optional[float]=None
+
+@app.post('/api/purchase-market/observations')
+def api_purchase_observations(x:PurchaseObservationIn): return add_purchase_observations(x.observations)
+@app.post('/api/purchase-market/band')
+def api_purchase_band(x:PurchaseBandIn): return purchase_market_band(**x.model_dump())
+@app.post('/api/purchase-market/import-dvfplus-csv')
+def api_purchase_import_dvf(x:PurchaseCsvIn): return import_dvfplus_csv(x.csv_text,x.city_filter)
+@app.post('/api/purchase-market/import-asking-csv')
+def api_purchase_import_asking(x:AskingCsvIn): return import_asking_csv(x.csv_text,x.source_name,x.source_type)
+@app.get('/api/purchase-market/status')
+def api_purchase_status(): return purchase_data_status()
+@app.post('/api/purchase-market/load-verified-seed')
+def api_purchase_seed(): return load_verified_seed()
+@app.post('/api/works/cost')
+def api_works_cost(x:WorksScopeIn): return estimate_scope(x.items)
+@app.post('/api/transformation/compare')
+def api_transform_compare(x:TransformCompareIn): return compare_states(x.current,x.target,x.works,x.extra_costs)
+@app.post('/api/land/screen')
+def api_land_screen(x:LandScreenIn): return screen_land(**x.model_dump())
 
 @app.post('/api/resale/analyze')
 def api_resale_analyze(x:ResaleAnalysisIn): return analyze_resale(**x.model_dump())
